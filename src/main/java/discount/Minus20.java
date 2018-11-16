@@ -12,7 +12,6 @@ public class Minus20 extends Discount {
 
     @Override
     public double getPrice() {
-        System.out.println("How to get HERE&&&");
         return super.getPrice() * 0.8;
     }
 

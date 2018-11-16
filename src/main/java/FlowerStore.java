@@ -6,6 +6,8 @@ import payment.CardPayment;
 import payment.Payment;
 import payment.Privat24Payment;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Scanner;
@@ -16,7 +18,7 @@ public class FlowerStore {
     HashMap<String, Payment> availablePaiment;
     HashMap<String, Delivery> availableDelivery;
     ArrayList<Flower> availableFlowers;
-    HashMap<String, Class> discounts;
+    HashMap<String, Constructor<? extends Order>> discounts;
 
     public FlowerStore() {
         this.availableFlowers = new ArrayList<>();
@@ -27,15 +29,15 @@ public class FlowerStore {
 
     public FlowerStore(ArrayList<FlowerBucket> defaultBuckets, HashMap<String, Payment> availablePaiment,
                        HashMap<String, Delivery> availableDelivery, ArrayList<Flower> availableFlowers,
-                       HashMap<String, Class> discount) {
+                       HashMap<String, Constructor<? extends Order>> discounts) {
         this.defaultBuckets = defaultBuckets;
         this.availablePaiment = availablePaiment;
         this.availableDelivery = availableDelivery;
         this.availableFlowers = availableFlowers;
-        this.discounts = discount;
+        this.discounts = discounts;
     }
 
-    public static FlowerStore createTypicalStore() {
+    public static FlowerStore createTypicalStore() throws NoSuchMethodException {
         Flower flower1 = new FlowerBuilder().setColor(Color.Blue).setCountryOfOrigin(Country.UKRAINE).
                 setPrice(1).setLenghtOfStem(0.5).setOdor(Odor.Good).setType(FlowerType.Tulip).build();
         Flower flower2 = new FlowerBuilder().setColor(Color.Red).setCountryOfOrigin(Country.UKRAINE).
@@ -45,8 +47,8 @@ public class FlowerStore {
         Flower flower4 = new FlowerBuilder().setColor(Color.Purple).setCountryOfOrigin(Country.UKRAINE).
                 setPrice(1000).setLenghtOfStem(0.5).setOdor(Odor.Good).setType(FlowerType.Rose).build();
 
-        HashMap<String, Class> discounts = new HashMap<>();
-        discounts.put("minus20%", Minus20.class);
+        HashMap<String, Constructor<? extends Order>> discounts = new HashMap<>();
+        discounts.put("minus20%", Minus20.class.getConstructor(Order.class));
 
 
         ArrayList<Flower> availableFlovers = new ArrayList<>();
@@ -111,11 +113,12 @@ public class FlowerStore {
                 answer = scan.nextLine();
             } while (!posibleAnswers.contains(answer));
 
-            switch (answer) {
-                case "minus20%":
-                    order = new Minus20(order);
-
+            try {
+                order = this.discounts.get(answer).newInstance(order);
+            } catch (InvocationTargetException e) {
+                e.printStackTrace();
             }
+
         }
         return order;
     }
